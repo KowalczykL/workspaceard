@@ -1,15 +1,15 @@
-int motorPin1 = 8;	// Blue   - 28BYJ48 pin 1
-int motorPin2 = 9;	// Pink   - 28BYJ48 pin 2
-int motorPin3 = 10;	// Yellow - 28BYJ48 pin 3
-int motorPin4 = 11;	// Orange - 28BYJ48 pin 4
-int motorSpeed = 3;     //variable to set stepper speed
+byte motorPin1 = 8;	// Blue   - 28BYJ48 pin 1
+byte motorPin2 = 9;	// Pink   - 28BYJ48 pin 2
+byte motorPin3 = 10;	// Yellow - 28BYJ48 pin 3
+byte motorPin4 = 11;	// Orange - 28BYJ48 pin 4
+byte motorSpeed = 3;     //variable to set stepper speed
 int obr = 512; // szacowane na obrót 512
 int i;
 //int zmm = 0;
-int pozAkt = 5;
-int pozDoc = 5;
-int pozmin = 2;
-int pozmax = 100;
+byte pozAkt = 5;
+byte pozDoc = 5;
+byte pozmin = 2;
+byte pozmax = 100;
 long del = 150;
 long licznik = 1;
 boolean start1 = true;
@@ -20,18 +20,20 @@ boolean start3 = true;
 #define przg 3
 #define przd 2
 #define ledPin 13
+#define potp A2
 
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #define ONE_WIRE_BUS 6
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-int stemp = 50;
-int ntemp = 50;
+byte stemp = 50;
+byte ntemp = 50;
+byte to = 60;
 
-//#include <Wire.h>
-//#include <LiquidCrystal_I2C.h>
-//LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 void setup() {
   pinMode(motorPin1, OUTPUT);
@@ -43,12 +45,13 @@ void setup() {
   pinMode(styd, INPUT_PULLUP);
   pinMode(przg, INPUT_PULLUP);
   pinMode(przd, INPUT_PULLUP);
-  Serial.begin(9600);
+//  Serial.begin(9600);
   sensors.begin();
   //  attachInterrupt(0, pozX, LOW);
   //  attachInterrupt(1, pozX, LOW);
-  //lcd.init();                      // initialize the lcd
-  //lcd.backlight();
+  lcd.init();                      // initialize the lcd
+  lcd.backlight();
+  lcd.print("*main*");
 }
 void off() {
   digitalWrite(motorPin1, LOW);
@@ -168,6 +171,7 @@ void start()
 {
   if (start3 == true)
   {
+    lcd.print("start3");
     if (digitalRead(styg) == 0)
     {
       obrcounterclockwise();
@@ -185,6 +189,7 @@ void start()
 
   if (start2 == true)
   {
+    lcd.print("start2");
     if (digitalRead(styg) == 1)
     {
       obrclockwise();
@@ -198,6 +203,7 @@ void start()
   }
   if (start1 == true)
   {
+    lcd.print("start1");
     if (digitalRead(styd) == 1)
     {
       obrcounterclockwise();
@@ -213,6 +219,32 @@ void start()
 }
 void serial()
 {
+  
+}
+
+void lcdfunc()
+{
+  lcd.clear();
+  lcd.print("T:");
+  lcd.print(ntemp);
+  lcd.print("   ");
+  lcd.print("P:");
+  lcd.print(pozAkt);
+  lcd.setCursor(1, 1);
+  lcd.print("T opt:");
+  lcd.print(to);
+  lcd.print("   ");
+  lcd.print("Pmax:");
+  lcd.print(pozmax);
+  //lcd.print();
+  //lcd.print();
+  //lcd.print();  
+}
+
+void pot()
+{
+to = analogRead(potp);
+to = map(to, 0, 123, 40, 90);
 }
 
 void styki()
@@ -286,14 +318,14 @@ void tempy()
 }
 void sprTempNowaPoz()
 {
-  if (ntemp < 40)
+  if (ntemp < (to - 25))
   { pozDoc--;
     if (pozDoc > 17)
     {
       pozDoc = 17;
     }
   }
-  else if (ntemp >= 40 && ntemp < 52)
+  else if (ntemp >= (to - 25) && ntemp < (to - 12))
   { if (ntemp > stemp)
     {
       mig;
@@ -311,7 +343,7 @@ void sprTempNowaPoz()
       pozDoc = 20;
     }
   }
-  else if ((ntemp >= 52) && (ntemp < 59))
+  else if ((ntemp >= (to - 12)) && (ntemp < (to - 7)))
   { if (ntemp > stemp)
     { pozDoc++;
       pozDoc++;
@@ -333,7 +365,7 @@ void sprTempNowaPoz()
       pozDoc = 12;
     }
   }
-  else if ((ntemp >= 59) && (ntemp <= 65))
+  else if ((ntemp >= (to - 7)) && (ntemp <= (to - 3)))
   { if (ntemp > stemp)
     { pozDoc++;
       pozDoc++;
@@ -355,7 +387,7 @@ void sprTempNowaPoz()
       pozDoc = 16;
     }
   }
-  else if ((ntemp > 65) && (ntemp < 70))
+  else if ((ntemp > (to - 3)) && (ntemp < (to + 3)))
   { if (ntemp > stemp)
     {
       pozDoc++;
@@ -377,7 +409,7 @@ void sprTempNowaPoz()
       pozDoc = 20;
     }
   }
-  else if ((ntemp >= 70) && (ntemp <= 72))
+  else if ((ntemp >= (to + 3)) && (ntemp <= (to + 5)))
   { if (ntemp > stemp)
     { pozDoc++;
       pozDoc++;
@@ -395,7 +427,7 @@ void sprTempNowaPoz()
       pozDoc = 24;
     }
   }
-  else if ((ntemp > 72) && (ntemp <= 75))
+  else if ((ntemp > (to + 5)) && (ntemp <= (to + 5)))
   { if (ntemp > stemp)
     { pozDoc++;
       pozDoc++;
@@ -413,7 +445,7 @@ void sprTempNowaPoz()
       pozDoc = 24;
     }
   }
-  else if ((ntemp > 75) && (ntemp < 77))
+  else if ((ntemp > (to + 5)) && (ntemp < (to + 7)))
   { if (ntemp > stemp)
     { pozDoc++;
       pozDoc++;
@@ -431,7 +463,7 @@ void sprTempNowaPoz()
       pozDoc = 28;
     }
   }
-  else if (ntemp >= 77)
+  else if (ntemp >= (to + 7))
   { pozDoc++;
     if (pozDoc < 32)
     {
@@ -443,6 +475,7 @@ void sprTempNowaPoz()
 void loop() {
 
   tempy();
+  lcdfunc();
   start();
   delays();
   sprTempNowaPoz();
@@ -451,6 +484,7 @@ void loop() {
   petla();
   pozycjonuj();
   //serial();
+  lcdfunc();
 }
 
 
